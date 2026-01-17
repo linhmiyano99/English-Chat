@@ -6,11 +6,12 @@ import Message from "./Message";
 import InputBox from "./InputBox";
 import Controls from "./Controls";
 
-const WS_URL = "ws://localhost:8000/ws/chat";
+const CHAT_WS_URL = "ws://localhost:8000/ws/chat";
+const AUDIO_WS_URL = "ws://localhost:8000/ws/audio"; // 👈 THÊM
 const USER_ID = "550e8400-e29b-41d4-a716-446655440000";
 
 export default function Chat() {
-  const { connected, messages, send } = useWebSocket(WS_URL);
+  const { connected, messages, send } = useWebSocket(CHAT_WS_URL);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const [topic, setTopic] = useState<string | null>(null);
@@ -21,11 +22,11 @@ export default function Chat() {
   }, [messages]);
 
   const handleSend = (text: string) => {
-    if (!connected) return;
+    if (!connected || !text.trim()) return;
 
     const payload: WSMessage = {
       user_id: USER_ID,
-     message: text,
+      message: text,
       topic: topic ?? undefined,
       vocab_focus: focusVocab.length ? focusVocab : undefined,
     };
@@ -34,7 +35,7 @@ export default function Chat() {
   };
 
   return (
-    /* 🌍 VIEWPORT — center như ChatGPT */
+    /* 🌍 VIEWPORT */
     <div
       style={{
         minHeight: "100vh",
@@ -47,7 +48,7 @@ export default function Chat() {
       <div
         style={{
           width: 768,
-          height: "100vh", // ✅ FIX CỨNG
+          height: "100vh",
           display: "flex",
           flexDirection: "column",
           background: "#fff",
@@ -66,7 +67,7 @@ export default function Chat() {
         >
           🗣️ Speaking Coach
         </h2>
-  
+
         {/* CONTROLS */}
         <div style={{ padding: "0 16px", flexShrink: 0 }}>
           <Controls
@@ -75,16 +76,16 @@ export default function Chat() {
             focusVocab={focusVocab}
             onFocusVocabChange={setFocusVocab}
           />
-  
+
           <div style={{ fontSize: 12, margin: "8px 0" }}>
             Status: {connected ? "🟢 Connected" : "🔴 Connecting..."}
           </div>
         </div>
-  
-        {/* MESSAGES — CHỖ DUY NHẤT ĐƯỢC SCROLL */}
+
+        {/* MESSAGES */}
         <div
           style={{
-            flex: 1, // ⭐ CỰC KỲ QUAN TRỌNG
+            flex: 1,
             overflowY: "auto",
             padding: 12,
             background: "#f7f7f7",
@@ -95,8 +96,8 @@ export default function Chat() {
           ))}
           <div ref={bottomRef} />
         </div>
-  
-        {/* INPUT — LUÔN DÍNH DƯỚI */}
+
+        {/* INPUT */}
         <div
           style={{
             borderTop: "1px solid #eee",
@@ -105,11 +106,16 @@ export default function Chat() {
             flexShrink: 0,
           }}
         >
-          <InputBox onSend={handleSend} disabled={!connected} />
+          <InputBox
+            onSend={handleSend}
+            onVoiceText={(text) => {
+                handleSend(text); // 👈 ĐÚNG
+              }}
+            disabled={!connected}
+            audioWsUrl={AUDIO_WS_URL} // 👈 TRUYỀN XUỐNG
+          />
         </div>
       </div>
     </div>
   );
-  
-  
-} 
+}

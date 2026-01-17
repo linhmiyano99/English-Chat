@@ -1,12 +1,21 @@
 import { useState } from "react";
+import { useVoiceInput } from "../hooks/useVoiceInput";
+
+
 interface InputBoxProps {
     onSend: (text: string) => void;
+    onVoiceText: (text: string) => void; // 👈 BẮT BUỘC
     disabled?: boolean;
+    audioWsUrl: string; // 👈 thêm
+
   }
   
-  export default function InputBox({ onSend, disabled }: InputBoxProps) {
+  export default function InputBox({ onSend, onVoiceText, disabled, audioWsUrl, }: InputBoxProps) {
+    
     const [text, setText] = useState("");
-  
+
+    const { start, stop, recording } = useVoiceInput(audioWsUrl, onVoiceText);
+
     const handleSend = () => {
       if (!text.trim()) return;
       onSend(text);
@@ -38,6 +47,21 @@ interface InputBoxProps {
             if (e.key === "Enter") handleSend();
           }}
         />
+
+        <button
+        onClick={recording ? stop : start}
+        disabled={disabled}
+        title={recording ? "Stop recording" : "Start recording"}
+        style={{
+          padding: "0 12px",
+          borderRadius: 6,
+          border: "1px solid #ccc",
+          background: recording ? "#ef4444" : "#eee",
+          cursor: "pointer",
+        }}
+      >
+        {recording ? "🎙️" : "🎤"}
+      </button>
   
         <button
           onClick={handleSend}
