@@ -10,8 +10,27 @@ const CHAT_WS_URL = "ws://localhost:8000/ws/chat";
 const AUDIO_WS_URL = "ws://localhost:8000/ws/audio"; // 👈 THÊM
 const USER_ID = "550e8400-e29b-41d4-a716-446655440000";
 
+function playMp3Base64(base64: string) {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+  
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+  
+    const blob = new Blob([bytes], { type: "audio/mpeg" });
+    const url = URL.createObjectURL(blob);
+  
+    const audio = new Audio(url);
+    audio.play();
+  }
+
+  
 export default function Chat() {
-  const { connected, messages, send } = useWebSocket(CHAT_WS_URL);
+    const { connected, messages, send } = useWebSocket(CHAT_WS_URL, {
+        onAudio: playMp3Base64,
+      });
+      
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const [topic, setTopic] = useState<string | null>(null);

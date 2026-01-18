@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { playAudioBase64 } from "../utils/audio";
 
 export interface WSMessage {
   user_id: string;
@@ -7,9 +8,21 @@ export interface WSMessage {
   vocab_focus?: string[];
 }
 
-interface WSResponse {
+// interface WSResponse {
+//   session_id: string;
+//   reply: string;
+// }
+
+interface AssistantResponse {
   session_id: string;
   reply: string;
+  audio?: string; // optional
+}
+  
+// type WSIncoming = AssistantResponse;
+
+interface WSOptions {
+onAudio?: (base64: string) => void;
 }
 
 export type Role = "user" | "assistant";
@@ -19,7 +32,7 @@ export interface ChatMessage {
   content: string;
 }
 
-export function useWebSocket(url: string) {
+export function useWebSocket(url: string, options?: WSOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -38,14 +51,27 @@ export function useWebSocket(url: string) {
     };
 
     ws.onmessage = (event) => {
-      if (!active) return;
+        const data: AssistantResponse = JSON.parse(event.data);
+        console.log("WS raw data:", data); // 👈 CHECK NGAY
 
-      const data: WSResponse = JSON.parse(event.data);
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: data.reply },
-      ]);
-    };
+      
+        // 1️⃣ hiển thị text
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: data.reply,
+            session_id: data.session_id,
+          },
+        ]);
+        console.log("audio length:", data.audio?.length);
+
+      
+        // 2️⃣ phát audio nếu có
+        if (data.audio) {
+          playAudioBase64(data.audio);
+        }
+      };
 
     ws.onerror = (err) => {
       console.error("WS ERROR", err);
